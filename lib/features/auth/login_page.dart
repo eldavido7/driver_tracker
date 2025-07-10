@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/auth_controller.dart';
+import '../../features/auth/register_page.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -318,7 +319,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  // Add navigation to sign up page
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const RegisterPage(),
+                                    ),
+                                  );
                                 },
                                 child: Text(
                                   'Sign Up',

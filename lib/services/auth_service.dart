@@ -42,6 +42,69 @@ class AuthService {
     }
   }
 
+  static Future<UserModel> register({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final res = await http.post(
+        Uri.parse('${Env.apiUrl}/api/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'name': name, 'email': email, 'password': password}),
+      );
+
+      Map<String, dynamic>? data;
+      try {
+        data = jsonDecode(res.body);
+      } catch (e) {
+        throw Exception(
+          'Invalid server response. Status: ${res.statusCode}, Body: ${res.body}',
+        );
+      }
+
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        // Check if we have the required fields
+        if (data != null &&
+            data['user'] != null &&
+            data['token'] != null &&
+            data['refreshToken'] != null) {
+          await _storage.write(key: 'token', value: data['token']);
+          await _storage.write(
+            key: 'refreshToken',
+            value: data['refreshToken'],
+          );
+          return UserModel.fromJson(data['user']);
+        } else {
+          // Handle case where registration was successful but response structure is different
+          if (data != null && data['user'] != null && data['token'] != null) {
+            await _storage.write(key: 'token', value: data['token']);
+            // If no refreshToken, just store the regular token
+            await _storage.write(key: 'refreshToken', value: data['token']);
+            return UserModel.fromJson(data['user']);
+          } else {
+            throw Exception(
+              'Registration successful but incomplete response data. Response: ${res.body}',
+            );
+          }
+        }
+      } else {
+        final errorMessage =
+            data?['error'] ?? data?['message'] ?? 'Registration failed';
+        throw Exception(errorMessage);
+      }
+    } catch (e) {
+      // Don't wrap the exception if it's already our custom exception
+      if (e.toString().contains(
+            'Registration successful but incomplete response data',
+          ) ||
+          e.toString().contains('Invalid server response')) {
+        rethrow;
+      }
+      throw Exception('Registration failed: ${e.toString()}');
+    }
+  }
+
   static Future<String?> getToken() async {
     return await _storage.read(key: 'token');
   }

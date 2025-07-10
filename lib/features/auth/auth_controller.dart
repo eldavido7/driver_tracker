@@ -46,6 +46,37 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> register({
+    required BuildContext context,
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    state = state.copyWith(isLoading: true);
+    try {
+      final user = await AuthService.register(
+        name: name,
+        email: email,
+        password: password,
+      );
+      state = state.copyWith(user: user);
+
+      // Navigate back to login or to main app if registration is successful
+      if (context.mounted) {
+        Navigator.of(context).pop(); // This will go back to login page
+        // OR navigate to main app if you want direct login after registration
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
   Future<void> checkAuth(BuildContext context) async {
     try {
       final user = await AuthService.getUserFromToken();
