@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/auth_controller.dart';
 import '../../features/auth/register_page.dart';
+import '../../features/auth/forgot_password_page.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -77,16 +78,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             shape: BoxShape.circle,
                             gradient: LinearGradient(
                               colors: [
-                                Colors.blue[600]!,
-                                Colors.indigo[600]!,
-                                Colors.purple[600]!,
+                                const Color(0xFF00A86B), // Main green
+                                const Color(0xFF008552), // Darker green
+                                const Color(0xFF006B42), // Darkest green
                               ],
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blue.withAlpha(
-                                  (0.3 * 255).toInt(),
-                                ),
+                                color: const Color(
+                                  0xFF00A86B,
+                                ).withAlpha((0.3 * 255).toInt()),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -228,7 +229,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             alignment: Alignment.centerRight,
                             child: TextButton(
                               onPressed: () {
-                                // Add forgot password functionality if needed
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const ForgotPasswordPage(),
+                                  ),
+                                );
                               },
                               child: Text(
                                 'Forgot Password?',
@@ -248,17 +253,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.blue[600]!,
-                                  Colors.indigo[600]!,
-                                  Colors.purple[600]!,
+                                  const Color(0xFF00A86B), // Main green
+                                  const Color(0xFF008552), // Darker green
+                                  const Color(0xFF006B42), // Darkest green
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.blue.withAlpha(
-                                    (0.3 * 255).toInt(),
-                                  ),
+                                  color: const Color(
+                                    0xFF00A86B,
+                                  ).withAlpha((0.3 * 255).toInt()),
                                   blurRadius: 12,
                                   offset: const Offset(0, 6),
                                 ),

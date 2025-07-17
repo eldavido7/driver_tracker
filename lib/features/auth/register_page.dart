@@ -118,14 +118,16 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           shape: BoxShape.circle,
                           gradient: LinearGradient(
                             colors: [
-                              Colors.blue[600]!,
-                              Colors.indigo[600]!,
-                              Colors.purple[600]!,
+                              const Color(0xFF00A86B), // Main green
+                              const Color(0xFF008552), // Darker green
+                              const Color(0xFF006B42), // Darkest green
                             ],
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.blue.withAlpha((0.3 * 255).toInt()),
+                              color: const Color(
+                                0xFF00A86B,
+                              ).withAlpha((0.3 * 255).toInt()),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),
@@ -339,17 +341,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.blue[600]!,
-                                  Colors.indigo[600]!,
-                                  Colors.purple[600]!,
+                                  const Color(0xFF00A86B), // Main green
+                                  const Color(0xFF008552), // Darker green
+                                  const Color(0xFF006B42), // Darkest green
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.blue.withAlpha(
-                                    (0.3 * 255).toInt(),
-                                  ),
+                                  color: const Color(
+                                    0xFF00A86B,
+                                  ).withAlpha((0.3 * 255).toInt()),
                                   blurRadius: 12,
                                   offset: const Offset(0, 6),
                                 ),

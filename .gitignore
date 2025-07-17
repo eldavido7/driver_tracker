@@ -1,52 +1,48 @@
-# Miscellaneous
+# ───── Miscellaneous ─────
 *.class
 *.log
 *.pyc
 *.swp
 .DS_Store
+.env
 .atom/
-.build/
-.buildlog/
-.history
 .svn/
+.history
 .swiftpm/
 migrate_working_dir/
-.env
-pubspec.lock
 
-# IntelliJ related
+# ───── IDEs ─────
+.idea/
 *.iml
 *.ipr
 *.iws
-.idea/
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# Uncomment this if you don't want to version VS Code workspace config
+# .vscode/
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# ───── Flutter & Dart ─────
 .dart_tool/
 .packages
 .flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
-**/*.iml
-**/.DS_Store
+build/
+**/doc/api/
+**/ios/Flutter/.last_build_id
 
-# Android
+# ───── Android ─────
 android/.gradle/
+android/.kotlin/
 android/local.properties
-android/app/build/
 android/app/.gradle/
+android/app/build/
+android/app/debug/
+android/app/profile/
+android/app/release/
 
-# iOS
+# ───── iOS ─────
 ios/Pods/
-ios/Podfile
 ios/*.xcworkspace
 ios/xcuserdata/
 ios/.symlinks/
@@ -59,7 +55,8 @@ ios/Flutter/flutter_assets/
 ios/ServiceDefinitions.json
 ios/Runner.app/
 
-# Windows
+# ───── Windows ─────
+windows/.dart_tool/
 **/Debug/
 **/Release/
 **/.vs/
@@ -68,15 +65,7 @@ ios/Runner.app/
 **/Intermediate/
 **/FilesWritten.txt
 **/Win32/
-windows/.dart_tool/
 
-# Symbolication related
+# ───── Obfuscation & Symbolication ─────
 app.*.symbols
-
-# Obfuscation related
 app.*.map.json
-
-# Android Studio will place build artifacts here
-android/app/debug
-android/app/profile
-android/app/release

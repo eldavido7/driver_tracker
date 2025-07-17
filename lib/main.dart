@@ -6,5 +6,6 @@ import 'config/env.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Env.load();
+  // await Env().setMapsApiKey();
   runApp(const ProviderScope(child: MyApp()));
 }

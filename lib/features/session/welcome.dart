@@ -1,13 +1,170 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../auth/auth_controller.dart';
+import './qr_scanner_page.dart';
+import './live_tracking_page.dart';
+import './profile_page.dart';
+import '../../config/env.dart';
+import '../session/session_controller.dart';
+import '../../models/session.dart';
 
-class WelcomePage extends ConsumerWidget {
+class WelcomePage extends ConsumerStatefulWidget {
   const WelcomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authControllerProvider).user;
+  ConsumerState<WelcomePage> createState() => _WelcomePageState();
+}
+
+class _WelcomePageState extends ConsumerState<WelcomePage> {
+  bool _hasProcessedSessions = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check for active sessions when the widget initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForActiveSessions();
+    });
+  }
+
+  Future<void> _checkForActiveSessions() async {
+    if (_hasProcessedSessions) return;
+
+    final authState = ref.read(authControllerProvider);
+    final user = authState.user;
+
+    if (user == null || user.sessions == null) return;
+
+    final activeSessions = user.sessions!
+        .where((s) => s.status == 'active')
+        .toList();
+
+    if (activeSessions.isNotEmpty && mounted) {
+      _hasProcessedSessions = true;
+      final sessionId = activeSessions.last.id;
+
+      await Future.delayed(Duration.zero);
+      if (!mounted) return;
+
+      final resume = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Resume Session?'),
+          content: const Text(
+            'You have an active session. Would you like to resume tracking it?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Start New'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Resume'),
+            ),
+          ],
+        ),
+      );
+
+      if (resume == true && mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => LiveTrackingPage(sessionId: sessionId),
+          ),
+        );
+      } else if (resume == false && mounted) {
+        await _endActiveSession(activeSessions.last);
+      }
+    }
+  }
+
+  Future<void> _endActiveSession(SessionModel session) async {
+    try {
+      double distance = 0.0;
+      String duration = 'N/A';
+      final endedAt = DateTime.now().toIso8601String();
+
+      try {
+        final origin = session.origin.split(',').map(double.parse).toList();
+        final destination = session.destination
+            .split(',')
+            .map(double.parse)
+            .toList();
+        final response = await http.get(
+          Uri.parse(
+            'https://maps.googleapis.com/maps/api/directions/json'
+            '?origin=${origin[0]},${origin[1]}'
+            '&destination=${destination[0]},${destination[1]}'
+            '&mode=driving'
+            '&key=${Env.mapsApiKey}',
+          ),
+        );
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'OK' && data['routes'].isNotEmpty) {
+          distance =
+              data['routes'][0]['legs'][0]['distance']['value'] / 1000.0; // km
+        }
+      } catch (e) {
+        debugPrint('Error fetching Directions API for distance: $e');
+      }
+
+      final createdAt = DateTime.tryParse(session.createdAt ?? '');
+      if (createdAt != null) {
+        final elapsed = DateTime.now().difference(createdAt);
+        duration = elapsed.inSeconds < 60
+            ? '${elapsed.inSeconds} sec${elapsed.inSeconds != 1 ? 's' : ''}'
+            : '${elapsed.inMinutes} min${elapsed.inMinutes != 1 ? 's' : ''}';
+      }
+
+      debugPrint(
+        'Calling endSession with distance: $distance, duration: $duration, endedAt: $endedAt',
+      );
+
+      if (!mounted) return;
+
+      await ref
+          .read(sessionControllerProvider.notifier)
+          .endSession(
+            context: context,
+            sessionId: session.id,
+            distance: distance,
+            duration: duration,
+          );
+
+      if (mounted) {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const QRCodeScannerPage()));
+      }
+    } catch (e) {
+      debugPrint('Error preparing to end session: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to prepare session end: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authControllerProvider);
+    final user = authState.user;
+
+    // Listen to auth state changes and check for active sessions
+    ref.listen(authControllerProvider, (previous, next) {
+      if (next.user != null &&
+          (previous?.user == null || previous?.user != next.user)) {
+        // Reset the flag when user changes
+        _hasProcessedSessions = false;
+        // Check for active sessions with the new user data
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _checkForActiveSessions();
+        });
+      }
+    });
 
     return Scaffold(
       body: Container(
@@ -15,7 +172,7 @@ class WelcomePage extends ConsumerWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+            colors: [Color(0xFF00A86B), Color(0xFF006B42)],
           ),
         ),
         child: SafeArea(
@@ -52,21 +209,44 @@ class WelcomePage extends ConsumerWidget {
                         ),
                       ],
                     ),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha((0.2 * 255).toInt()),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.logout),
-                        color: Colors.white,
-                        tooltip: 'Logout',
-                        onPressed: () async {
-                          await ref
-                              .read(authControllerProvider.notifier)
-                              .logout();
-                        },
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha((0.2 * 255).toInt()),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.person),
+                            color: Colors.white,
+                            tooltip: 'Profile',
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const ProfilePage(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha((0.2 * 255).toInt()),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.logout),
+                            color: Colors.white,
+                            tooltip: 'Logout',
+                            onPressed: () async {
+                              await ref
+                                  .read(authControllerProvider.notifier)
+                                  .logout();
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -93,13 +273,13 @@ class WelcomePage extends ConsumerWidget {
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                              colors: [Color(0xFF00A86B), Color(0xFF006B42)],
                             ),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
                                 color: const Color(
-                                  0xFF667eea,
+                                  0xFF00A86B,
                                 ).withAlpha((0.3 * 255).toInt()),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
@@ -145,7 +325,6 @@ class WelcomePage extends ConsumerWidget {
                             ],
                           ),
                         ),
-
                         const SizedBox(height: 32),
 
                         // Description Card
@@ -185,7 +364,6 @@ class WelcomePage extends ConsumerWidget {
                             ],
                           ),
                         ),
-
                         const SizedBox(height: 40),
 
                         // Start Tracking Button
@@ -194,14 +372,14 @@ class WelcomePage extends ConsumerWidget {
                           height: 60,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
-                              colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                              colors: [Color(0xFF00A86B), Color(0xFF006B42)],
                             ),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blue.withAlpha(
-                                  (0.3 * 255).toInt(),
-                                ),
+                                color: const Color(
+                                  0xFF00A86B,
+                                ).withAlpha((0.3 * 255).toInt()),
                                 blurRadius: 20,
                                 offset: const Offset(0, 8),
                               ),
@@ -231,13 +409,12 @@ class WelcomePage extends ConsumerWidget {
                             onPressed: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) => const PlaceholderPage(),
+                                  builder: (_) => const QRCodeScannerPage(),
                                 ),
                               );
                             },
                           ),
                         ),
-
                         const SizedBox(height: 32),
 
                         // Privacy Note
@@ -272,116 +449,6 @@ class WelcomePage extends ConsumerWidget {
 
                         const SizedBox(height: 20),
                       ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class PlaceholderPage extends StatelessWidget {
-  const PlaceholderPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Custom App Bar
-              Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha((0.2 * 255).toInt()),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back),
-                        color: Colors.white,
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Text(
-                      'Location Setup',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Main Content
-              Expanded(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 20),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
-                    ),
-                  ),
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(40.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-                              ),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.construction,
-                              size: 60,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(
-                            'Coming Soon!',
-                            style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Location and destination input page is under development.',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey[600],
-                              height: 1.5,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
                     ),
                   ),
                 ),
