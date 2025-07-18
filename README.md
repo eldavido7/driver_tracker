@@ -31,7 +31,7 @@ A **Flutter-based mobile application** for real-time driver location tracking, t
   - `/api/sessions`
   - `/api/location`
 
-view backend for this app [here](https://https://github.com/eldavido7/taxi-tracker)
+view backend, test driver qrcode and viewer page for this app here [Taxi Tracker](https://https://github.com/eldavido7/taxi-tracker)
 
 ---
 
