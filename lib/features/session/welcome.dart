@@ -9,6 +9,7 @@ import './profile_page.dart';
 import '../../config/env.dart';
 import '../session/session_controller.dart';
 import '../../models/session.dart';
+// import '../auth/login_page.dart';
 
 class WelcomePage extends ConsumerStatefulWidget {
   const WelcomePage({super.key});
@@ -181,72 +182,90 @@ class _WelcomePageState extends ConsumerState<WelcomePage> {
               // Custom App Bar
               Padding(
                 padding: const EdgeInsets.all(20.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha((0.2 * 255).toInt()),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            Icons.directions_car,
-                            color: Colors.white,
-                            size: 28,
-                          ),
+                    // Left Icon
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withAlpha((0.2 * 255).toInt()),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Driver Tracker',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: const Icon(
+                          Icons.directions_car,
+                          color: Colors.white,
+                          size: 28,
                         ),
-                      ],
+                      ),
                     ),
-                    Row(
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha((0.2 * 255).toInt()),
-                            borderRadius: BorderRadius.circular(12),
+                    // Centered Title
+                    const Text(
+                      'Ride Along',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    // Right Icons
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withAlpha(
+                                (0.2 * 255).toInt(),
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.person),
+                              color: Colors.white,
+                              tooltip: 'Profile',
+                              onPressed: () {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const ProfilePage(),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
-                          child: IconButton(
-                            icon: const Icon(Icons.person),
-                            color: Colors.white,
-                            tooltip: 'Profile',
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) => const ProfilePage(),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha((0.2 * 255).toInt()),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.logout),
-                            color: Colors.white,
-                            tooltip: 'Logout',
-                            onPressed: () async {
-                              await ref
-                                  .read(authControllerProvider.notifier)
-                                  .logout();
-                            },
-                          ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          // Container(
+                          //   decoration: BoxDecoration(
+                          //     color: Colors.white.withAlpha(
+                          //       (0.2 * 255).toInt(),
+                          //     ),
+                          //     borderRadius: BorderRadius.circular(12),
+                          //   ),
+                          //   child: IconButton(
+                          //     icon: const Icon(Icons.logout),
+                          //     color: Colors.white,
+                          //     tooltip: 'Logout',
+                          //     onPressed: () async {
+                          //       final navigator = Navigator.of(context);
+                          //       final authNotifier = ref.read(
+                          //         authControllerProvider.notifier,
+                          //       );
+                          //       await authNotifier.logout();
+                          //       if (!mounted) return;
+                          //       navigator.pushAndRemoveUntil(
+                          //         MaterialPageRoute(
+                          //           builder: (context) => const LoginPage(),
+                          //         ),
+                          //         (Route<dynamic> route) => false,
+                          //       );
+                          //     },
+                          //   ),
+                          // ),
+                        ],
+                      ),
                     ),
                   ],
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/auth_controller.dart';
 import '../../features/auth/register_page.dart';
 import '../../features/auth/forgot_password_page.dart';
+import '../session/welcome.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -40,6 +41,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget build(BuildContext context) {
     final authController = ref.watch(authControllerProvider.notifier);
     final isLoading = ref.watch(authControllerProvider).isLoading;
+
+    ref.listen(authControllerProvider, (_, next) {
+      // If the state becomes authenticated, navigate to the WelcomePage.
+      if (next.isAuthenticated) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const WelcomePage()),
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: Colors.grey[50],

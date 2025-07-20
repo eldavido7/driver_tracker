@@ -12,6 +12,8 @@ class AuthState {
   final bool isLoading;
   final UserModel? user;
 
+  bool get isAuthenticated => user != null;
+
   AuthState({this.isLoading = false, this.user});
 
   AuthState copyWith({bool? isLoading, UserModel? user}) {
